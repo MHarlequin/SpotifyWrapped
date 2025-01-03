@@ -1,0 +1,14 @@
+-- Query: What time of day (Morning, Afternoon, Evening) do I listen to music the most?
+
+SELECT 
+    CASE
+        WHEN HOUR(ts) BETWEEN 5 AND 11 THEN 'Morning'
+        WHEN HOUR(ts) BETWEEN 12 AND 17 THEN 'Afternoon'
+        WHEN HOUR(ts) BETWEEN 18 AND 23 THEN 'Evening'
+    END AS time_frame,
+    COUNT(*) AS total_plays,
+    SUM(ms_played) / (1000 * 60) AS total_listening_minutes
+FROM spotify_streaming_data
+WHERE year = 2024
+GROUP BY time_frame
+ORDER BY total_listening_minutes DESC;
