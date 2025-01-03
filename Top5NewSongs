@@ -1,0 +1,26 @@
+-- Query: What are the top 5 songs in 2024 that I didn’t listen to in 2023?
+
+WITH new_songs AS (
+    SELECT DISTINCT s2024.master_metadata_track_name AS track
+    FROM spotify_streaming_data s2024
+    WHERE s2024.year = 2024
+    AND s2024.master_metadata_track_name IS NOT NULL
+    AND s2024.master_metadata_track_name NOT IN (
+        SELECT DISTINCT s2023.master_metadata_track_name
+        FROM spotify_streaming_data s2023
+        WHERE s2023.year = 2023
+        AND s2023.master_metadata_track_name IS NOT NULL
+    )
+)
+SELECT 
+    s2024.master_metadata_track_name AS track,
+    s2024.master_metadata_album_album_name AS album,
+    COUNT(*) AS total_plays,
+    SUM(s2024.ms_played) / (1000 * 60) AS total_played_minutes
+FROM spotify_streaming_data s2024
+JOIN new_songs ns
+ON s2024.master_metadata_track_name = ns.track
+WHERE s2024.year = 2024
+GROUP BY s2024.master_metadata_track_name, s2024.master_metadata_album_album_name
+ORDER BY total_plays DESC
+LIMIT 5;
