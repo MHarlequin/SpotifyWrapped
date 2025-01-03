@@ -1,0 +1,36 @@
+-- Query: Who are the top 3 artists per season in 2024?
+WITH artist_totals AS (
+    SELECT 
+        CASE 
+            WHEN month IN (12, 1, 2) THEN 'Winter'
+            WHEN month IN (3, 4, 5) THEN 'Spring'
+            WHEN month IN (6, 7, 8) THEN 'Summer'
+            WHEN month IN (9, 10, 11) THEN 'Fall'
+        END AS season,
+        master_metadata_album_artist_name AS artist,
+        SUM(ms_played) / (1000 * 60) AS total_played_minutes,
+        COUNT(*) AS total_plays
+    FROM spotify_streaming_data
+    WHERE year = 2024
+    GROUP BY season, artist
+),
+ranked_artists AS (
+    SELECT 
+        artist_totals.season,
+        artist_totals.artist,
+        artist_totals.total_played_minutes,
+        artist_totals.total_plays,
+        ROW_NUMBER() OVER (
+            PARTITION BY artist_totals.season
+            ORDER BY artist_totals.total_played_minutes DESC
+        ) AS ranking
+    FROM artist_totals
+)
+SELECT 
+    season, 
+    artist, 
+    total_played_minutes,
+    total_plays
+FROM ranked_artists
+WHERE ranking <= 3
+ORDER BY season, ranking;
