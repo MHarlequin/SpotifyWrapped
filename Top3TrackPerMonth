@@ -1,0 +1,25 @@
+--What are the top 3 most replayed tracks per month in 2024?
+
+WITH track_monthly_rankings AS (
+    SELECT 
+        master_metadata_track_name AS track,
+        master_metadata_album_album_name AS album,
+        COUNT(*) AS total_plays,
+        ROW_NUMBER() OVER (
+            PARTITION BY year, month
+            ORDER BY COUNT(*) DESC
+        ) AS rank
+    FROM spotify_streaming_data
+    WHERE year = 2024
+    AND master_metadata_track_name IS NOT NULL
+    GROUP BY year, month, track, album
+)
+SELECT 
+    year,
+    month,
+    track,
+    album,
+    total_plays
+FROM track_monthly_rankings
+WHERE rank <= 3
+ORDER BY year, month, rank;
